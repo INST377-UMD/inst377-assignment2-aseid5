@@ -1,0 +1,173 @@
+<!DOCTYPE html>
+<html lang="en">
+<head>
+    <meta charset="UTF-8">
+    <meta name="viewport" content="width=device-width, initial-scale=1.0">
+    <title>Quran Explorer</title>
+    <style>
+        body { font-family: Arial, sans-serif; background-color: #f4f4f4; margin: 0; padding: 0; }
+        header, footer { background-color: #333; color: white; padding: 20px; text-align: center; }
+        nav {
+  display: flex;
+  justify-content: center;
+  background-color: #222;
+  padding: 15px 0;
+}
+
+nav a {
+  color: white;
+  text-decoration: none;
+  padding: 10px 20px;
+  font-weight: bold;
+  font-size: 18px;
+  margin: 0 15px;
+  transition: background-color 0.3s;
+}
+
+nav a:hover {
+  background-color: #444;
+  border-radius: 5px;
+}
+
+        .container { display: flex; justify-content: space-between; max-width: 900px; margin: 20px auto; background: white; padding: 20px; box-shadow: 0 0 10px rgba(0,0,0,0.1); }
+        .main { width: 65%; padding: 10px; }
+        .sidebar { width: 30%; background: #eee; padding: 10px; text-align: center; border-radius: 5px; }
+        .search-box { margin-top: 20px; }
+        .ayah-box { border: 1px solid black; padding: 15px; background: #f9f9f9; font-weight: bold; border-radius: 5px; margin-top: 10px; }
+        button { background: #007bff; color: white; border: none; padding: 10px; cursor: pointer; border-radius: 5px; transition: 0.3s; }
+        button:hover { background: #0056b3; }
+        .translation-select { width: 100%; padding: 10px; margin-top: 10px; }
+    </style>
+    <script src="https://cdnjs.cloudflare.com/ajax/libs/annyang/2.6.1/annyang.min.js"></script>
+
+</head>
+<body>
+    <nav>
+        <a href="#" onclick="showPage('home')">Home</a>
+        <a href="#" onclick="showPage('search')">Search</a>
+        <a href="#" onclick="showPage('about')">About</a>
+    </nav>    
+      
+    <header>
+        <h1>Quran Explorer</h1>
+    </header>
+   
+    
+    <div id="home" class="page">
+        <div class="container">
+            <div class="main">
+                <h2>Welcome to Quran Explorer</h2>
+                <div id="randomAyah" class="ayah-box" style="margin-top: 20px;"></div>
+                <p>Search, read, and listen to the Quran in multiple translations.</p>
+            </div>
+            <div class="sidebar">
+                <p>Start your search</p>
+                <button onclick="showPage('search')">Search Ayah</button>
+            </div>
+        </div>
+    </div>
+
+    <div id="search" class="page" style="display:none;">
+        <h2>Search for an Ayah</h2>
+        <input type="text" id="searchTerm" placeholder="Enter keyword (e.g., patience)">
+        <button onclick="searchAyah()">Search</button>
+        <div id="results"></div>
+    </div>
+
+    <div id="about" class="page" style="display:none;">
+        <h2>About Quran Explorer</h2>
+        <p>This web application allows users to search for Quranic verses, compare translations, and listen to recitations using the Al-Quran Cloud API.</p>
+        <p>Our goal is to make it easier for anyone to access, explore, and reflect on Quranic teachings in a user-friendly way. The app includes a keyword search feature and voice command support to improve accessibility.</p>
+        <p>Built with HTML, CSS, and JavaScript, this project also integrates API data to fetch Quranic content in real time. It's designed to serve both casual readers and those seeking deeper study of the Quran.</p>
+    </div>
+    
+    
+    <footer>
+        <p>&copy; 2025 Quran Explorer</p>
+    </footer>
+    
+    <script>
+        function showPage(page) {
+            document.querySelectorAll('.page').forEach(p => p.style.display = 'none');
+            document.getElementById(page).style.display = 'block';
+        }
+    
+        function searchAyah() {
+            const keyword = document.getElementById('searchTerm').value;
+            if (!keyword) return alert("Please enter a keyword");
+    
+            fetch(`https://api.alquran.cloud/v1/search/${keyword}/all/en.asad`)
+                .then(response => response.json())
+                .then(data => {
+                    const resultsDiv = document.getElementById("results");
+                    resultsDiv.innerHTML = "";
+                    data.data.matches.forEach(match => {
+                        const ayahBox = document.createElement("div");
+                        ayahBox.className = "ayah-box";
+                        ayahBox.innerHTML = `<p><strong>Ayah:</strong> ${match.text}</p><p><strong>Surah:</strong> ${match.surah.englishName}</p>`;
+                        resultsDiv.appendChild(ayahBox);
+                    });
+                })
+                .catch(error => {
+                    console.error("Search Error:", error);
+                    alert("Error fetching data");
+                });
+        }
+    
+        function loadRandomAyah() {
+            const randomNumber = Math.floor(Math.random() * 6236) + 1;
+    
+            fetch(`https://api.alquran.cloud/v1/ayah/${randomNumber}/en.asad`)
+                .then(response => {
+                    if (!response.ok) {
+                        throw new Error("Network response was not OK");
+                    }
+                    return response.json();
+                })
+                .then(data => {
+                    const ayahDiv = document.getElementById("randomAyah");
+                    const ayah = data.data.text;
+                    const surah = data.data.surah.englishName;
+                    const number = data.data.numberInSurah;
+    
+                    ayahDiv.innerHTML = `
+                        <p><strong>Random Ayah:</strong> ${ayah}</p>
+                        <p><strong>Surah:</strong> ${surah} (${number})</p>
+                    `;
+                })
+                .catch(error => {
+                    console.error("Random Ayah Error:", error);
+                    document.getElementById("randomAyah").innerText = "Could not load Ayah.";
+                });
+        }
+    
+        // Load the random ayah when the page loads
+        window.onload = function () {
+            showPage('home');
+            loadRandomAyah();
+        };
+        if (annyang) {
+    const commands = {
+        'go to home': () => showPage('home'),
+        'go to search': () => showPage('search'),
+        'go to about': () => showPage('about'),
+        'search for *term': term => {
+            document.getElementById('searchTerm').value = term;
+            searchAyah();
+            showPage('search');
+        }
+    };
+
+    annyang.addCommands(commands);
+    annyang.start();
+    annyang.addCallback('result', function(phrases) {
+  console.log("Heard phrases:", phrases);
+  alert("Heard: " + phrases[0]);
+});
+
+}
+
+    </script>
+    
+</body>
+</html>
